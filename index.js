@@ -7,7 +7,6 @@ const app = express();
 
 var cache = (duration) => {
     return (req, res, next) => {
-
         let key = '__express__' + req.originalUrl || req.url;
         let cachedBody = mcache.get(key);
         if (cachedBody && req.query.fetch === undefined) {
@@ -26,7 +25,7 @@ var cache = (duration) => {
 
 
 function buildRequest(ticker, metric) {
-    var modules = ['recommendationTrend', 'summaryDetail', 'earnings', 'calendarEvents', 'upgradeDowngradeHistory', 'price', 'defaultKeyStatistics', 'summaryProfile', 'financialData'];
+     var modules = ['recommendationTrend', 'summaryDetail', 'earnings', 'calendarEvents', 'upgradeDowngradeHistory', 'price', 'defaultKeyStatistics', 'summaryProfile', 'financialData'];
 
     if (metric) {
         let metricGroups = metric.split('.');
@@ -49,14 +48,40 @@ function parseResponse(quote, metric) {
     return quote;
 }
 
-app.get('/:ticker', cache(20), async (req, res) => {
+app.get('/:ticker', cache(20), (req, res) => {
     let ticker = req.params.ticker;
-let metric = req.query.metric;
+    let metric = req.query.metric;
 
-let quote = await yahooFinance.quote(buildRequest(ticker, metric));
-
-res.send(parseResponse(quote, metric));
+    return yahooFinance.quote(buildRequest(ticker, metric))
+        .then((quote) => {
+            return res.status(500).send(parseResponse(quote, metric));
+        }).catch(function (err) {
+            // never goes here
+            console.log(err);
+            return res.status(500).json(err);
+        });
 });
+
+function test() {
+    let ticker = 'APPL';
+    let metric = 'summaryDetail';
+    console.log(buildRequest(ticker, metric));
+
+    yahooFinance.quote(buildRequest(ticker, metric))
+        .then(function (quotes) {
+            if (quotes[0]) {
+                console.log(
+                    '%s\n...\n%s',
+                    JSON.stringify(quotes[0], null, 2),
+                    JSON.stringify(quotes[quotes.length - 1], null, 2)
+                );
+            } else {
+                console.log('N/A');
+            }
+        });
+}
+
+//test();
 
 app.listen(port, () => {
     console.log(`Stockopedia app listening on port ${port}!`)
