@@ -62,26 +62,25 @@ app.get('/:ticker', cache(20), (req, res) => {
         });
 });
 
-function test() {
+async function test() {
     let ticker = 'APPL';
-    let metric = 'summaryDetail';
+    let metric = undefined;
     console.log(buildRequest(ticker, metric));
 
-    yahooFinance.quote(buildRequest(ticker, metric))
-        .then(function (quotes) {
-            if (quotes[0]) {
-                console.log(
-                    '%s\n...\n%s',
-                    JSON.stringify(quotes[0], null, 2),
-                    JSON.stringify(quotes[quotes.length - 1], null, 2)
-                );
-            } else {
-                console.log('N/A');
-            }
-        });
+     yahooFinance.quote(buildRequest(ticker, metric), function (err, quotes) {
+         if (err) { throw err; }
+         if (quotes) {
+             console.log(
+                 '%s',
+                 JSON.stringify(quotes, null, 2)
+             );
+         } else {
+             console.log('N/A');
+         }
+     });
 }
 
-//test();
+test();
 
 app.listen(port, () => {
     console.log(`Stockopedia app listening on port ${port}!`)
