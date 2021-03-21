@@ -42,7 +42,8 @@ function parseResponse(quote, metric) {
     if (metric) {
         let metricGroups = metric.split('.');
         if (metricGroups.length == 2) {
-            return "" + quote[metricGroups[0]][metricGroups[1]];
+            let value = quote[metricGroups[0]][metricGroups[1]];
+            return (value === undefined ? "" : "" + value);
         }
     }
     return quote;
@@ -63,24 +64,17 @@ app.get('/:ticker', cache(20), (req, res) => {
 });
 
 async function test() {
-    let ticker = 'APPL';
-    let metric = undefined;
+    let ticker = 'gd';
+    let metric = 'summaryDetail.dividendRate';
     console.log(buildRequest(ticker, metric));
 
-     yahooFinance.quote(buildRequest(ticker, metric), function (err, quotes) {
-         if (err) { throw err; }
-         if (quotes) {
-             console.log(
-                 '%s',
-                 JSON.stringify(quotes, null, 2)
-             );
-         } else {
-             console.log('N/A');
-         }
+     await yahooFinance.quote(buildRequest(ticker, metric)).
+         then((resp) => {
+        console.log(parseResponse(resp, metric));
      });
 }
 
-test();
+//test();
 
 app.listen(port, () => {
     console.log(`Stockopedia app listening on port ${port}!`)
