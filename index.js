@@ -53,9 +53,19 @@ app.get('/:ticker', cache(20), (req, res) => {
     let ticker = req.params.ticker;
     let metric = req.query.metric;
 
-    return yahooFinance.quote(buildRequest(ticker, metric))
+    let request = buildRequest(ticker, metric);
+
+    let baseMetricKey = '__express__' +  JSON.stringify(request);
+    let cachedQuote = mcache.get(baseMetricKey);
+
+    if (cachedQuote) {
+        return res.status(200).send(parseResponse(cachedQuote, metric));
+    }
+
+    return yahooFinance.quote(request)
         .then((quote) => {
-            return res.status(500).send(parseResponse(quote, metric));
+            mcache.put(baseMetricKey, quote, 60 * 1000); // cache response from yahoo for 1 minute
+            return res.status(200).send(parseResponse(quote, metric));
         }).catch(function (err) {
             // never goes here
             console.log(err);
@@ -64,7 +74,7 @@ app.get('/:ticker', cache(20), (req, res) => {
 });
 
 async function test() {
-    let ticker = 'gd';
+    let ticker = 'aapl';
     let metric = 'summaryDetail.dividendRate';
     console.log(buildRequest(ticker, metric));
 
@@ -74,7 +84,7 @@ async function test() {
      });
 }
 
-//test();
+test();
 
 app.listen(port, () => {
     console.log(`Stockopedia app listening on port ${port}!`)
