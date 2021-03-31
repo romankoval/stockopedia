@@ -64,7 +64,7 @@ app.get('/:ticker', cache(20), (req, res) => {
 
     return yahooFinance.quote(request)
         .then((quote) => {
-            mcache.put(baseMetricKey, quote, 60 * 1000); // cache response from yahoo for 1 minute
+            mcache.put(baseMetricKey, quote, 24*60*60 * 1000); // cache response from yahoo for 1 DAY
             return res.status(200).send(parseResponse(quote, metric));
         }).catch(function (err) {
             // never goes here
